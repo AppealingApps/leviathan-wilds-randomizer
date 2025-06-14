@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <title>Leviathan Wilds Randomizer</title>
@@ -9,35 +10,43 @@
       padding: 20px;
       background: #f0f0f0;
     }
+
     button {
       padding: 10px 20px;
       margin-top: 10px;
       display: block;
     }
-    .player, .leviathan {
+
+    .player,
+    .leviathan {
       background: white;
       margin-bottom: 10px;
       padding: 10px;
       border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
       opacity: 0;
       transform: translateY(10px);
       animation: fadeIn 0.5s ease-out forwards;
     }
+
     label {
       display: inline-block;
       margin-top: 10px;
     }
+
     .player-complexity {
       margin-top: 10px;
       padding: 10px;
     }
+
     #results {
       margin-top: 20px;
     }
+
     .controls {
       margin-top: 10px;
     }
+
     @keyframes fadeIn {
       to {
         opacity: 1;
@@ -46,6 +55,7 @@
     }
   </style>
 </head>
+
 <body>
   <h1>Leviathan Wilds Randomizer</h1>
 
@@ -65,12 +75,18 @@
     <b>Leviathan Complexity:</b><br>
     <label>Min:
       <select id="leviMin">
-        <option value="1" selected>1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
+        <option value="1" selected>1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
       </select>
     </label>
     <label>Max:
       <select id="leviMax">
-        <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4" selected>4</option>
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4" selected>4</option>
       </select>
     </label>
   </div>
@@ -138,84 +154,98 @@
     }
 
     function complexityOptions(defaultVal) {
-      return [1, 2, 3, 4].map(i => 
+      return [1, 2, 3, 4].map(i =>
         `<option value="${i}" ${i === defaultVal ? 'selected' : ''}>${i}</option>`
       ).join('');
     }
 
     function assignCharacters(existingState = null) {
-        const includeDeepvale = document.getElementById("includeDeepvale").checked;
-        const playerCount = parseInt(document.getElementById("playerCount").value);
-        const allNames = { ...names, ...(includeDeepvale ? deepvaleNames : {}) };
-        const allClasses = { ...classes, ...(includeDeepvale ? deepvaleClasses : {}) };
-        const allLeviathans = { ...baseLeviathans, ...(includeDeepvale ? deepvaleLeviathans : {}) };
+      const includeDeepvale = document.getElementById("includeDeepvale").checked;
+      const playerCount = parseInt(document.getElementById("playerCount").value);
+      const allNames = { ...names, ...(includeDeepvale ? deepvaleNames : {}) };
+      const allClasses = { ...classes, ...(includeDeepvale ? deepvaleClasses : {}) };
+      const allLeviathans = { ...baseLeviathans, ...(includeDeepvale ? deepvaleLeviathans : {}) };
 
-        let selectedPlayers, chosenLeviathan;
+      let selectedPlayers, chosenLeviathan;
 
-        if (existingState) {
-            selectedPlayers = existingState.selectedPlayers;
-            chosenLeviathan = existingState.chosenLeviathan;
-        } else {
-            selectedPlayers = [];
+      if (existingState) {
+        selectedPlayers = existingState.selectedPlayers;
+        chosenLeviathan = existingState.chosenLeviathan;
+      } else {
+        selectedPlayers = [];
 
-            for (let i = 0; i < playerCount; i++) {
-            const nameMin = parseInt(document.getElementById(`nameMin${i}`).value);
-            const nameMax = parseInt(document.getElementById(`nameMax${i}`).value);
-            const classMin = parseInt(document.getElementById(`classMin${i}`).value);
-            const classMax = parseInt(document.getElementById(`classMax${i}`).value);
+        // Create mutable arrays of available names and classes
+        let availableNames = Object.entries(allNames);
+        let availableClasses = Object.entries(allClasses);
 
-            const nameOptions = Object.entries(allNames)
-                .filter(([_, c]) => c >= nameMin && c <= nameMax)
-                .map(([name]) => name);
-            const classOptions = Object.entries(allClasses)
-                .filter(([_, obj]) => obj.complexity >= classMin && obj.complexity <= classMax)
-                .map(([cls]) => cls);
+        for (let i = 0; i < playerCount; i++) {
+          const nameMin = parseInt(document.getElementById(`nameMin${i}`).value);
+          const nameMax = parseInt(document.getElementById(`nameMax${i}`).value);
+          const classMin = parseInt(document.getElementById(`classMin${i}`).value);
+          const classMax = parseInt(document.getElementById(`classMax${i}`).value);
 
-            const charName = shuffleArray(nameOptions)[0];
-            const charClass = shuffleArray(classOptions)[0];
-            selectedPlayers.push({ charName, charClass });
-            }
+          // Filter available names and classes by complexity
+          const nameOptions = availableNames
+            .filter(([_, c]) => c >= nameMin && c <= nameMax)
+            .map(([name]) => name);
+          const classOptions = availableClasses
+            .filter(([_, obj]) => obj.complexity >= classMin && obj.complexity <= classMax)
+            .map(([cls]) => cls);
 
-            const leviMin = parseInt(document.getElementById("leviMin").value);
-            const leviMax = parseInt(document.getElementById("leviMax").value);
-            const leviOptions = Object.entries(allLeviathans)
-            .filter(([_, c]) => c >= leviMin && c <= leviMax)
-            .map(([lev]) => lev);
-            chosenLeviathan = shuffleArray(leviOptions)[0];
+          if (nameOptions.length === 0 || classOptions.length === 0) {
+            alert("Not enough unique names or classes for the selected constraints.");
+            return;
+          }
 
-            // Save to localStorage
-            const state = {
-            includeDeepvale,
-            playerCount,
-            selectedPlayers,
-            chosenLeviathan,
-            leviComplexity: { min: leviMin, max: leviMax }
-            };
-            localStorage.setItem("randomizerState", JSON.stringify(state));
+          const charName = shuffleArray(nameOptions)[0];
+          const charClass = shuffleArray(classOptions)[0];
+          selectedPlayers.push({ charName, charClass });
+
+          // Remove chosen name and class from available lists
+          availableNames = availableNames.filter(([name]) => name !== charName);
+          availableClasses = availableClasses.filter(([cls]) => cls !== charClass);
         }
 
-        const resultsDiv = document.getElementById("results");
-        resultsDiv.innerHTML = '';
+        const leviMin = parseInt(document.getElementById("leviMin").value);
+        const leviMax = parseInt(document.getElementById("leviMax").value);
+        const leviOptions = Object.entries(allLeviathans)
+          .filter(([_, c]) => c >= leviMin && c <= leviMax)
+          .map(([lev]) => lev);
+        chosenLeviathan = shuffleArray(leviOptions)[0];
 
-        selectedPlayers.forEach((player, i) => {
-            const complexity = allNames[player.charName];
-            const classStats = allClasses[player.charClass];
-            const div = document.createElement("div");
-            div.className = "player";
-            div.innerHTML = `
+        // Save to localStorage
+        const state = {
+          includeDeepvale,
+          playerCount,
+          selectedPlayers,
+          chosenLeviathan,
+          leviComplexity: { min: leviMin, max: leviMax }
+        };
+        localStorage.setItem("randomizerState", JSON.stringify(state));
+      }
+
+      const resultsDiv = document.getElementById("results");
+      resultsDiv.innerHTML = '';
+
+      selectedPlayers.forEach((player, i) => {
+        const complexity = allNames[player.charName];
+        const classStats = allClasses[player.charClass];
+        const div = document.createElement("div");
+        div.className = "player";
+        div.innerHTML = `
             <strong>Player ${i + 1}:</strong>
             ${player.charName} (${stars(complexity)})
             the ${player.charClass} (Mobility: ${classStats.mobility}, Power: ${classStats.power}, Support: ${classStats.support}, Complexity: ${stars(classStats.complexity)})
             `;
-            resultsDiv.appendChild(div);
-        });
+        resultsDiv.appendChild(div);
+      });
 
-        const leviathanDiv = document.createElement("div");
-        leviathanDiv.className = "leviathan";
-        leviathanDiv.innerHTML = `
+      const leviathanDiv = document.createElement("div");
+      leviathanDiv.className = "leviathan";
+      leviathanDiv.innerHTML = `
             <strong>Leviathan Encounter:</strong> ${chosenLeviathan} (${stars(allLeviathans[chosenLeviathan])})
         `;
-        resultsDiv.appendChild(leviathanDiv);
+      resultsDiv.appendChild(leviathanDiv);
     }
 
     function restorePreviousState() {
@@ -240,4 +270,5 @@
     };
   </script>
 </body>
+
 </html>
