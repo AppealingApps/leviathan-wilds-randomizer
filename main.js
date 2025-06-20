@@ -1,32 +1,29 @@
 const names = {
-  "Edge": 3, "Fix": 1, "Kestrel": 1, "Hazard": 1,
-  "Mystic": 2, "Hornet": 2, "Brick": 2, "Cheer": 3
+  "Brick": 2, "Cheer": 3, "Edge": 3, "Fix": 1, 
+  "Hazard": 1, "Hornet": 2, "Kestrel": 1, "Mystic": 2
 };
 const deepvaleNames = { "Savvy": 3 };
 
 const classes = {
-  "Freeclimber": { mobility: 4, power: 1, support: 1, complexity: 1 },
   "Breaker": { mobility: 1, power: 4, support: 1, complexity: 1 },
-  "Mender": { mobility: 1, power: 1, support: 4, complexity: 1 },
-  "Roughneck": { mobility: 2, power: 2, support: 2, complexity: 2 },
-  "Herald": { mobility: 2, power: 0, support: 4, complexity: 2 },
+  "Freeclimber": { mobility: 4, power: 1, support: 1, complexity: 1 },
   "Gadgeteer": { mobility: 2, power: 2, support: 2, complexity: 2 },
+  "Gambler": { mobility: 2, power: 2, support: 2, complexity: 3 },
+  "Herald": { mobility: 2, power: 0, support: 4, complexity: 2 },
   "Magus": { mobility: 2, power: 3, support: 1, complexity: 3 },
-  "Gambler": { mobility: 2, power: 2, support: 2, complexity: 3 }
+  "Mender": { mobility: 1, power: 1, support: 4, complexity: 1 },
+  "Roughneck": { mobility: 2, power: 2, support: 2, complexity: 2 }
 };
 const deepvaleClasses = {
   "Harvester": { mobility: 2, power: 3, support: 1, complexity: 3 }
 };
 
 const baseLeviathans = {
-  "Sage": 1, "Sentinel": 1, "Storm": 1, "Watcher": 2, "Weaver": 2,
-  "Avalanche": 2, "Hive": 2, "Collector": 2, "Fury": 2,
-  "Bloom": 3, "Forsaken": 3, "Tunneler": 3, "Twins": 3,
-  "Vortex": 3, "Hunger": 3, "Deep": 3, "Tyrant": 3
+  "Avalanche": 2, "Bloom": 3, "Collector": 2, "Deep": 3, "Forsaken": 3, "Fury": 2, "Hive": 2, "Hunger": 3,
+  "Sage": 1, "Sentinel": 1, "Storm": 1, "Tunneler": 3, "Twins": 3, "Tyrant": 3, "Vortex": 3, "Watcher": 2, "Weaver": 2 
 };
 const deepvaleLeviathans = {
-  "Keeper": 2, "Ravager": 3, "Flux": 1, "Dwelling": 3,
-  "Infestation": 3, "Architect": 4, "Anomaly": 4
+  "Architect": 4, "Anomaly": 4, "Dwelling": 3, "Flux": 1, "Infestation": 3, "Keeper": 2, "Ravager": 3
 };
 
 function stars(n) {
@@ -69,11 +66,12 @@ function assignCharacters(existingState = null) {
   const allClasses = { ...classes, ...(includeDeepvale ? deepvaleClasses : {}) };
   const allLeviathans = { ...baseLeviathans, ...(includeDeepvale ? deepvaleLeviathans : {}) };
 
-  let selectedPlayers, chosenLeviathan;
+  let selectedPlayers, chosenLeviathan, chosenMutation;
 
   if (existingState) {
     selectedPlayers = existingState.selectedPlayers;
     chosenLeviathan = existingState.chosenLeviathan;
+    chosenMutation = existingState.chosenMutation;
   } else {
     selectedPlayers = [];
 
@@ -116,12 +114,22 @@ function assignCharacters(existingState = null) {
       .map(([lev]) => lev);
     chosenLeviathan = shuffleArray(leviOptions)[0];
 
+    // Mutation logic
+    const useMutation = document.getElementById("includeMutation")?.checked;
+    if (useMutation) {
+      const mutationOptions = Object.keys(baseLeviathans).filter(
+        (lev) => lev !== chosenLeviathan
+      );
+      chosenMutation = shuffleArray(mutationOptions)[0];
+    }
+
     // Save to localStorage
     const state = {
       includeDeepvale,
       playerCount,
       selectedPlayers,
       chosenLeviathan,
+      chosenMutation,
       leviComplexity: { min: leviMin, max: leviMax }
     };
     localStorage.setItem("randomizerState", JSON.stringify(state));
@@ -149,6 +157,17 @@ function assignCharacters(existingState = null) {
         <strong>Leviathan Encounter:</strong> ${chosenLeviathan} (${stars(allLeviathans[chosenLeviathan])})
     `;
   resultsDiv.appendChild(leviathanDiv);
+
+  // Output Mutation if enabled
+  const useMutation = document.getElementById("includeMutation")?.checked;
+  if (useMutation && chosenMutation) {
+    const mutationDiv = document.createElement("div");
+    mutationDiv.className = "leviathan";
+    mutationDiv.innerHTML = `
+      <strong>Mutation:</strong> ${chosenMutation}
+    `;
+    resultsDiv.appendChild(mutationDiv);
+  }
 }
 
 function restorePreviousState() {
